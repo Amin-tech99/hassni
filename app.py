@@ -6,6 +6,7 @@ from flask import Flask, render_template, redirect, url_for, flash, request, jso
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import func
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 import json
@@ -145,9 +146,43 @@ def admin_dashboard():
         flash('You do not have permission to access this page.', 'danger')
         return redirect(url_for('transcriber_dashboard'))
         
-    form = AudioUploadForm()
+    # Get all audio files
     audio_files = Audio.query.order_by(Audio.upload_date.desc()).all()
-    return render_template('admin/dashboard.html', form=form, audio_files=audio_files)
+    
+    # Gather overall statistics
+    total_clips = db.session.query(func.count(Clip.id)).scalar() or 0
+    assigned_clips = db.session.query(func.count(Clip.id)).filter(Clip.status != 'unassigned').scalar() or 0
+    submitted_clips = db.session.query(func.count(Clip.id)).filter(Clip.status == 'submitted').scalar() or 0
+    completed_clips = db.session.query(func.count(Clip.id)).filter(Clip.status == 'completed').scalar() or 0
+    
+    # Transcription statistics
+    draft_transcriptions = db.session.query(func.count(Transcription.id)).filter(Transcription.status == 'draft').scalar() or 0
+    submitted_transcriptions = db.session.query(func.count(Transcription.id)).filter(Transcription.status == 'submitted').scalar() or 0
+    approved_transcriptions = db.session.query(func.count(Transcription.id)).filter(Transcription.status == 'approved').scalar() or 0
+    rejected_transcriptions = db.session.query(func.count(Transcription.id)).filter(Transcription.status == 'rejected').scalar() or 0
+    
+    # Calculate percentages for progress bars
+    assigned_percentage = (assigned_clips / total_clips * 100) if total_clips > 0 else 0
+    submitted_percentage = (submitted_clips / total_clips * 100) if total_clips > 0 else 0
+    completed_percentage = (completed_clips / total_clips * 100) if total_clips > 0 else 0
+    
+    stats = {
+        'total_clips': total_clips,
+        'assigned_clips': assigned_clips,
+        'submitted_clips': submitted_clips,
+        'completed_clips': completed_clips,
+        'draft_transcriptions': draft_transcriptions,
+        'submitted_transcriptions': submitted_transcriptions,
+        'approved_transcriptions': approved_transcriptions,
+        'rejected_transcriptions': rejected_transcriptions,
+        'assigned_percentage': assigned_percentage,
+        'submitted_percentage': submitted_percentage,
+        'completed_percentage': completed_percentage
+    }
+    
+    form = AudioUploadForm()
+    
+    return render_template('admin/dashboard.html', audio_files=audio_files, form=form, stats=stats)
 
 @app.route('/admin/upload', methods=['POST'])
 @login_required
@@ -449,8 +484,12 @@ def export_dataset(audio_id):
     with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
         # Create JSONL file
         jsonl_data = []
+        included_count = 0
+        total_count = 0
         
         clips = Clip.query.filter_by(audio_id=audio_id).order_by(Clip.order).all()
+        total_count = len(clips)
+        
         for clip in clips:
             transcription = Transcription.query.filter_by(clip_id=clip.id, status='approved').first()
             if transcription:
@@ -459,6 +498,7 @@ def export_dataset(audio_id):
                     "text": transcription.text
                 }
                 jsonl_data.append(entry)
+                included_count += 1
                 
                 # Add the audio clip to the zip file
                 if os.path.exists(clip.path):
@@ -469,6 +509,12 @@ def export_dataset(audio_id):
         zf.writestr('dataset.jsonl', jsonl_content)
     
     memory_file.seek(0)
+    
+    # Flash a message about how many clips were included
+    if included_count == 0:
+        flash(f'Warning: No approved transcriptions were found for this audio file. The dataset is empty.', 'warning')
+    else:
+        flash(f'Success: Exported {included_count} out of {total_count} clips. Only approved transcriptions are included in the dataset.', 'success')
     
     return send_file(
         memory_file,

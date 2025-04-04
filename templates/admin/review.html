@@ -122,9 +122,9 @@
         <div class="col-md-12">
             <h2 class="mb-4">Review Transcriptions</h2>
             
-            {% if pending_transcriptions > 0 %}
+            {% if pending_count > 0 %}
                 <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle me-2"></i> There are <strong>{{ pending_transcriptions }}</strong> transcriptions waiting for review.
+                    <i class="fas fa-exclamation-triangle me-2"></i> There are <strong>{{ pending_count }}</strong> transcriptions waiting for review.
                 </div>
             {% endif %}
             

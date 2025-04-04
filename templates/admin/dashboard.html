@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Hassaniya Arabic Transcription Platform{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-upload me-2"></i>Upload Audio</h4>
+            </div>
+            <div class="card-body">
+                <form id="upload-form" method="POST" action="{{ url_for('upload_audio') }}" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        <label for="audio_file" class="form-label">Select Audio File (.wav)</label>
+                        <div class="input-group">
+                            {{ form.audio_file(class="form-control", id="audio_file", accept=".wav") }}
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                        {% if form.audio_file.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.audio_file.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Maximum file size: 500MB. The file will be processed to remove silence and split into clips.
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-file-audio me-2"></i>Audio Files</h4>
+            </div>
+            <div class="card-body">
+                {% if audio_files %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Filename</th>
+                                    <th>Upload Date</th>
+                                    <th>Status</th>
+                                    <th>Clips</th>
+                                    <th>Progress</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for audio in audio_files %}
+                                    <tr>
+                                        <td>{{ audio.filename }}</td>
+                                        <td>{{ audio.upload_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            {% if audio.status == 'pending' %}
+                                                <span class="badge bg-secondary">Pending</span>
+                                            {% elif audio.status == 'processing' %}
+                                                <span class="badge bg-info">Processing</span>
+                                            {% elif audio.status == 'processed' %}
+                                                <span class="badge bg-success">Processed</span>
+                                            {% elif audio.status == 'error' %}
+                                                <span class="badge bg-danger">Error</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ audio.clip_count }}</td>
+                                        <td>
+                                            {% set assigned_count = audio.clips|selectattr('status', 'ne', 'unassigned')|list|length %}
+                                            {% set completed_count = audio.clips|selectattr('status', 'equalto', 'completed')|list|length %}
+                                            {% if audio.clip_count > 0 %}
+                                                <div class="progress" title="{{ completed_count }}/{{ audio.clip_count }} clips completed">
+                                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ (completed_count / audio.clip_count) * 100 }}%" aria-valuenow="{{ completed_count }}" aria-valuemin="0" aria-valuemax="{{ audio.clip_count }}"></div>
+                                                </div>
+                                                <small class="text-muted">{{ completed_count }}/{{ audio.clip_count }} completed</small>
+                                            {% else %}
+                                                <span class="badge bg-secondary">No clips</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                {% if audio.status == 'processed' and audio.clip_count > 0 %}
+                                                    <a href="{{ url_for('assign_clips', audio_id=audio.id) }}" class="btn btn-sm btn-outline-primary" title="Assign Clips">
+                                                        <i class="fas fa-user-check"></i>
+                                                    </a>
+                                                    <a href="{{ url_for('review_audio_transcriptions', audio_id=audio.id) }}" class="btn btn-sm btn-outline-info" title="Review Transcriptions">
+                                                        <i class="fas fa-check-double"></i>
+                                                    </a>
+                                                    <a href="{{ url_for('export_dataset', audio_id=audio.id) }}" class="btn btn-sm btn-outline-success" title="Export Dataset">
+                                                        <i class="fas fa-file-export"></i>
+                                                    </a>
+                                                {% endif %}
+                                                <form method="POST" action="{{ url_for('delete_audio', audio_id=audio.id) }}" class="d-inline">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger delete-audio-btn" title="Delete Audio">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> No audio files uploaded yet. Upload a WAV file to begin.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

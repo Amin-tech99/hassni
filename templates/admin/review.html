@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Review Transcriptions - Hassaniya Arabic Transcription Platform{% endblock %}
+
+{% block content %}
+{% if audio is defined %}
+    <!-- Review clips for a specific audio file -->
+    <div class="row">
+        <div class="col-12 mb-3">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('review_transcriptions') }}">All Audio</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ audio.filename }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2>Review: {{ audio.filename }}</h2>
+                <div>
+                    <a href="{{ url_for('export_dataset', audio_id=audio.id) }}" class="btn btn-success">
+                        <i class="fas fa-file-export me-1"></i> Export Dataset
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Progress stats -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h5>Total Clips</h5>
+                            <h2 class="text-primary">{{ clip_data|length }}</h2>
+                        </div>
+                        <div class="col-md-3">
+                            <h5>Assigned</h5>
+                            <h2 class="text-info">{{ clip_data|selectattr('clip.status', 'ne', 'unassigned')|list|length }}</h2>
+                        </div>
+                        <div class="col-md-3">
+                            <h5>Submitted</h5>
+                            <h2 class="text-warning">{{ clip_data|selectattr('transcription', 'defined')|selectattr('transcription.status', 'equalto', 'submitted')|list|length }}</h2>
+                        </div>
+                        <div class="col-md-3">
+                            <h5>Approved</h5>
+                            <h2 class="text-success">{{ clip_data|selectattr('transcription', 'defined')|selectattr('transcription.status', 'equalto', 'approved')|list|length }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Transcriptions to review -->
+            <div class="row">
+                {% for cd in clip_data %}
+                    {% if cd.transcription and cd.transcription.status in ['submitted', 'approved'] %}
+                        <div class="col-md-6 mb-4">
+                            <div id="card-{{ cd.transcription.id }}" class="card h-100 {% if cd.transcription.status == 'submitted' %}border-warning{% elif cd.transcription.status == 'approved' %}border-success{% endif %}">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="me-2">Clip {{ cd.clip.order }}</span>
+                                        <span class="badge {% if cd.transcription.status == 'submitted' %}bg-warning{% elif cd.transcription.status == 'approved' %}bg-success{% endif %} status-badge">
+                                            {{ cd.transcription.status|capitalize }}
+                                        </span>
+                                    </div>
+                                    <small class="text-muted">
+                                        By: {{ cd.transcriber.username if cd.transcriber else 'Unknown' }}
+                                    </small>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Audio player -->
+                                    <div class="audio-player-container">
+                                        <audio src="{{ url_for('static', filename=cd.clip.path.replace(request.script_root + '/static/', '')) }}" 
+                                               controls 
+                                               class="review-audio-player w-100"></audio>
+                                        <div class="speed-controls">
+                                            <button type="button" class="btn btn-sm btn-outline-primary speed-btn" data-speed="0.5">0.5x</button>
+                                            <button type="button" class="btn btn-sm btn-primary speed-btn" data-speed="1.0">1.0x</button>
+                                            <button type="button" class="btn btn-sm btn-outline-primary speed-btn" data-speed="1.5">1.5x</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Transcription text -->
+                                    <div class="mt-3">
+                                        <label for="text-{{ cd.transcription.id }}" class="form-label">Transcription:</label>
+                                        <textarea id="text-{{ cd.transcription.id }}" class="form-control transcription-area" 
+                                                  readonly>{{ cd.transcription.text }}</textarea>
+                                    </div>
+                                </div>
+                                <div class="card-footer d-flex justify-content-between">
+                                    <div>
+                                        {% if cd.transcription.status == 'submitted' %}
+                                            <button class="btn btn-success approve-btn" data-transcription-id="{{ cd.transcription.id }}">
+                                                <i class="fas fa-check me-1"></i> Approve
+                                            </button>
+                                            <button class="btn btn-danger reject-btn" data-transcription-id="{{ cd.transcription.id }}">
+                                                <i class="fas fa-times me-1"></i> Reject
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                    <button class="btn btn-primary edit-btn" data-transcription-id="{{ cd.transcription.id }}">
+                                        <i class="fas fa-edit me-1"></i> Edit
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> No transcriptions submitted for review yet.
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% else %}
+    <!-- List of all audio files -->
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mb-4">Review Transcriptions</h2>
+            
+            {% if pending_transcriptions > 0 %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i> There are <strong>{{ pending_transcriptions }}</strong> transcriptions waiting for review.
+                </div>
+            {% endif %}
+            
+            <div class="list-group mb-4">
+                {% for audio in audio_files %}
+                    {% set submitted_count = audio.clips|selectattr('status', 'equalto', 'submitted')|list|length %}
+                    {% set approved_count = audio.clips|selectattr('status', 'equalto', 'completed')|list|length %}
+                    {% set total_count = audio.clip_count %}
+                    
+                    <a href="{{ url_for('review_audio_transcriptions', audio_id=audio.id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">{{ audio.filename }}</h5>
+                            <small>Uploaded: {{ audio.upload_date.strftime('%Y-%m-%d') }}</small>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="badge bg-warning me-2">{{ submitted_count }} Pending</span>
+                                <span class="badge bg-success me-2">{{ approved_count }} Approved</span>
+                                <small class="text-muted">{{ total_count }} Total Clips</small>
+                            </div>
+                            
+                            <div class="progress w-50">
+                                {% if total_count > 0 %}
+                                    <!-- Yellow for submitted, green for approved -->
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ (approved_count / total_count) * 100 }}%" 
+                                         aria-valuenow="{{ approved_count }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="{{ total_count }}">
+                                    </div>
+                                    <div class="progress-bar bg-warning" role="progressbar" 
+                                         style="width: {{ (submitted_count / total_count) * 100 }}%" 
+                                         aria-valuenow="{{ submitted_count }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="{{ total_count }}">
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </a>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> No audio files have been uploaded yet.
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

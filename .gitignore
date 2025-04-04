@@ -4,4 +4,6 @@ __pycache__/
 .env
 venv/
 instance/
-
+clips/
+uploads/
+transcriptions/

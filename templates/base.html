@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#212529">
     <title>{% block title %}Hassaniya Arabic Transcription Platform{% endblock %}</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
@@ -13,13 +14,14 @@
     {% block head %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-3 mb-lg-4">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('index') }}">
                 <i class="fas fa-microphone-alt me-2"></i>
-                Hassaniya Transcription
+                <span class="d-none d-sm-inline">Hassaniya Transcription</span>
+                <span class="d-inline d-sm-none">Transcription</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
@@ -27,24 +29,24 @@
                     {% if current_user.is_authenticated %}
                         {% if current_user.role == 'admin' %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                                <a class="nav-link py-2" href="{{ url_for('admin_dashboard') }}">
                                     <i class="fas fa-tachometer-alt me-1"></i> Dashboard
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('review_transcriptions') }}">
+                                <a class="nav-link py-2" href="{{ url_for('review_transcriptions') }}">
                                     <i class="fas fa-tasks me-1"></i> Review
                                 </a>
                             </li>
                         {% else %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('transcriber_dashboard') }}">
+                                <a class="nav-link py-2" href="{{ url_for('transcriber_dashboard') }}">
                                     <i class="fas fa-home me-1"></i> Dashboard
                                 </a>
                             </li>
                         {% endif %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <a class="nav-link dropdown-toggle py-2" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-user me-1"></i> {{ current_user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
@@ -55,7 +57,7 @@
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('login') }}">
+                            <a class="nav-link py-2" href="{{ url_for('login') }}">
                                 <i class="fas fa-sign-in-alt me-1"></i> Login
                             </a>
                         </li>
@@ -65,7 +67,7 @@
         </div>
     </nav>
 
-    <div class="container mb-5">
+    <div class="container mb-4 mb-lg-5">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -82,12 +84,12 @@
 
     <footer class="footer mt-auto py-3 bg-dark">
         <div class="container">
-            <div class="d-flex justify-content-between align-items-center">
-                <span class="text-muted">
-                    <i class="fas fa-code me-1"></i> Hassaniya Arabic Transcription Platform
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <span class="text-muted mb-2 mb-md-0">
+                    <i class="fas fa-code me-1"></i> Hassaniya Transcription
                 </span>
                 <span class="text-muted">
-                    <i class="fas fa-database me-1"></i> Creating quality datasets for speech recognition
+                    <i class="fas fa-database me-1"></i> Creating quality datasets
                 </span>
             </div>
         </div>

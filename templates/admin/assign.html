@@ -8,7 +8,7 @@
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Assign Clips: {{ audio.filename }}</li>
+                <li class="breadcrumb-item active text-truncate" aria-current="page" style="max-width: 50vw;">{{ audio.filename }}</li>
             </ol>
         </nav>
     </div>
@@ -18,32 +18,32 @@
     <div class="col-md-12">
         <div class="card mb-4">
             <div class="card-header bg-primary text-white">
-                <h4 class="mb-0"><i class="fas fa-user-check me-2"></i>Assign Clips to Transcribers</h4>
+                <h4 class="mb-0"><i class="fas fa-user-check me-2"></i>Assign Clips</h4>
             </div>
             <div class="card-body">
                 <div class="row mb-4">
-                    <div class="col-md-4">
+                    <div class="col-md-4 mb-4 mb-md-0">
                         <div class="card h-100">
                             <div class="card-header bg-info text-white">
                                 <h5 class="mb-0">Audio Information</h5>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body p-0">
                                 <ul class="list-group list-group-flush">
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        Filename
-                                        <span>{{ audio.filename }}</span>
+                                        <span>Filename</span>
+                                        <span class="text-truncate ms-2" style="max-width: 200px;" title="{{ audio.filename }}">{{ audio.filename }}</span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        Total Clips
-                                        <span>{{ clips|length }}</span>
+                                        <span>Total Clips</span>
+                                        <span class="badge bg-primary">{{ clips|length }}</span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        Unassigned Clips
-                                        <span>{{ clips|selectattr('status', 'equalto', 'unassigned')|list|length }}</span>
+                                        <span>Unassigned</span>
+                                        <span class="badge bg-secondary">{{ clips|selectattr('status', 'equalto', 'unassigned')|list|length }}</span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        Assigned Clips
-                                        <span>{{ clips|selectattr('status', 'ne', 'unassigned')|list|length }}</span>
+                                        <span>Assigned</span>
+                                        <span class="badge bg-info">{{ clips|selectattr('status', 'ne', 'unassigned')|list|length }}</span>
                                     </li>
                                 </ul>
                             </div>
@@ -55,16 +55,15 @@
                             <div class="card-header bg-info text-white">
                                 <h5 class="mb-0">Transcriber Workload</h5>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body p-0">
                                 <div class="table-responsive">
-                                    <table class="table table-hover">
+                                    <table class="table table-hover mb-0">
                                         <thead>
                                             <tr>
                                                 <th>Transcriber</th>
-                                                <th>Assigned</th>
-                                                <th>Submitted</th>
-                                                <th>Approved</th>
-                                                <th>Workload</th>
+                                                <th class="text-center">Assigned</th>
+                                                <th class="text-center">Submitted</th>
+                                                <th class="text-center">Workload</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -75,9 +74,8 @@
                                                 
                                                 <tr>
                                                     <td>{{ transcriber.username }}</td>
-                                                    <td>{{ assigned_count }}</td>
-                                                    <td>{{ submitted_clips|length }}</td>
-                                                    <td>{{ completed_clips|length }}</td>
+                                                    <td class="text-center">{{ assigned_count }}</td>
+                                                    <td class="text-center">{{ submitted_clips|length }}/{{ completed_clips|length }}</td>
                                                     <td>
                                                         <div class="progress">
                                                             {% if assigned_count > 0 %}
@@ -93,7 +91,7 @@
                                                 </tr>
                                             {% else %}
                                                 <tr>
-                                                    <td colspan="5" class="text-center">No transcribers available.</td>
+                                                    <td colspan="4" class="text-center">No transcribers available.</td>
                                                 </tr>
                                             {% endfor %}
                                         </tbody>
@@ -111,19 +109,15 @@
                             
                             <div class="card">
                                 <div class="card-header bg-dark">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="form-check">
+                                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
+                                        <div class="form-check mb-2 mb-sm-0">
                                             <input class="form-check-input" type="checkbox" id="select-all-clips">
                                             <label class="form-check-label" for="select-all-clips">
-                                                Select All Clips
+                                                Select All (<span id="selected-count">0</span>/<span>{{ clips|selectattr('status', 'in', ['unassigned', 'assigned'])|list|length }}</span>)
                                             </label>
                                         </div>
                                         
-                                        <div class="d-flex align-items-center">
-                                            <span class="me-3">
-                                                <span id="selected-count">0</span> clips selected
-                                            </span>
-                                            
+                                        <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 w-100 w-sm-auto">
                                             <div class="input-group">
                                                 {{ form.transcriber(class="form-select") }}
                                                 {{ form.submit(class="btn btn-primary assign-btn", disabled=True) }}
@@ -132,16 +126,16 @@
                                     </div>
                                 </div>
                                 
-                                <div class="card-body">
+                                <div class="card-body p-0">
                                     <div class="table-responsive">
-                                        <table class="table table-hover">
+                                        <table class="table table-hover mb-0">
                                             <thead>
                                                 <tr>
                                                     <th style="width: 40px;"></th>
                                                     <th>Clip</th>
-                                                    <th>Status</th>
+                                                    <th class="text-center">Status</th>
                                                     <th>Assigned To</th>
-                                                    <th style="width: 100px;">Preview</th>
+                                                    <th style="width: 80px;">Audio</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -158,10 +152,10 @@
                                                             </div>
                                                         </td>
                                                         <td>
-                                                            Clip {{ clip.order }}
-                                                            <small class="text-muted d-block">{{ clip.filename }}</small>
+                                                            <strong>Clip {{ clip.order }}</strong>
+                                                            <small class="text-muted d-block text-truncate" style="max-width: 200px;" title="{{ clip.filename }}">{{ clip.filename }}</small>
                                                         </td>
-                                                        <td>
+                                                        <td class="text-center">
                                                             {% if clip.status == 'unassigned' %}
                                                                 <span class="badge bg-secondary">Unassigned</span>
                                                             {% elif clip.status == 'assigned' %}
@@ -180,14 +174,14 @@
                                                                     {% endif %}
                                                                 {% endfor %}
                                                             {% else %}
-                                                                -
+                                                                <span class="text-muted">—</span>
                                                             {% endif %}
                                                         </td>
                                                         <td>
                                                             <audio src="{{ url_for('serve_clip', clip_id=clip.id) }}" 
                                                                 controls 
                                                                 class="preview-audio-player"
-                                                                style="width: 120px; height: 30px;"></audio>
+                                                                style="width: 100%; height: 30px;"></audio>
                                                         </td>
                                                     </tr>
                                                 {% endfor %}

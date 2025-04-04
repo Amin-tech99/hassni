@@ -16,33 +16,55 @@ document.addEventListener("DOMContentLoaded", () => {
         audioPlayer.addEventListener('loadeddata', () => {
             console.log("Audio loaded successfully");
         });
+        
+        // Add playback control buttons functionality
+        const halfSpeedBtn = document.getElementById("play-half-speed");
+        const normalSpeedBtn = document.getElementById("play-normal-speed");
+        const repeatBtn = document.getElementById("repeat-audio");
+        
+        if (halfSpeedBtn) {
+            halfSpeedBtn.addEventListener("click", () => {
+                audioPlayer.playbackRate = 0.5;
+                if (audioPlayer.paused) audioPlayer.play();
+            });
+        }
+        
+        if (normalSpeedBtn) {
+            normalSpeedBtn.addEventListener("click", () => {
+                audioPlayer.playbackRate = 1.0;
+                if (audioPlayer.paused) audioPlayer.play();
+            });
+        }
+        
+        if (repeatBtn) {
+            repeatBtn.addEventListener("click", () => {
+                audioPlayer.currentTime = 0;
+                audioPlayer.play();
+            });
+        }
     }
     
     // Handle transcription form submission
     const transcriptionForm = document.getElementById("transcription-form");
     const submitTypeInput = document.getElementById("submit_type");
+    const saveBtn = document.getElementById("save-btn");
+    const submitBtn = document.getElementById("submit-btn");
     
     if (transcriptionForm && submitTypeInput) {
-        transcriptionForm.addEventListener("submit", function(e) {
-            // Set the submit_type to 'save' by default when the form is submitted
-            submitTypeInput.value = 'save';
-            console.log("Form submitted with submit_type:", submitTypeInput.value);
-        });
+        if (saveBtn) {
+            saveBtn.addEventListener("click", function() {
+                submitTypeInput.value = 'save';
+                console.log("Setting submit_type to 'save'");
+                transcriptionForm.submit();
+            });
+        }
         
-        // Add submit button for saving and submitting
-        const saveButton = transcriptionForm.querySelector("button[type='submit']");
-        const submitButton = document.createElement("button");
-        submitButton.type = "button";
-        submitButton.className = "btn btn-success ms-2";
-        submitButton.textContent = "Submit";
-        submitButton.addEventListener("click", function() {
-            submitTypeInput.value = 'submit';
-            console.log("Setting submit_type to:", submitTypeInput.value);
-            transcriptionForm.submit();
-        });
-        
-        if (saveButton) {
-            saveButton.parentNode.insertBefore(submitButton, saveButton.nextSibling);
+        if (submitBtn) {
+            submitBtn.addEventListener("click", function() {
+                submitTypeInput.value = 'submit';
+                console.log("Setting submit_type to 'submit'");
+                transcriptionForm.submit();
+            });
         }
     }
     
@@ -86,6 +108,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     // Use AJAX to fetch transcription text if needed
                     // For now, we're assuming the transcription is loaded with the page
                     console.log(`Clip status: ${clipStatus}`);
+                    
+                    // On mobile, scroll to the transcription area after selecting a clip
+                    if (window.innerWidth < 768) {
+                        const transcriptionCard = document.querySelector(".col-md-8 .card");
+                        if (transcriptionCard) {
+                            setTimeout(() => {
+                                transcriptionCard.scrollIntoView({ behavior: 'smooth' });
+                            }, 300);
+                        }
+                    }
                 }
             });
         });
@@ -95,5 +127,25 @@ document.addEventListener("DOMContentLoaded", () => {
         clipItems[0].click();
     } else {
         console.warn("No clip items found - audio player won't be initialized");
+    }
+    
+    // Add touch-friendly features for mobile
+    if (window.innerWidth < 768) {
+        // Make clip items slightly larger for touch targets
+        clipItems.forEach(item => {
+            item.style.padding = "15px";
+        });
+        
+        // Auto-expand textarea when focused on mobile
+        const textarea = document.getElementById("text");
+        if (textarea) {
+            textarea.addEventListener("focus", function() {
+                this.rows = 6;
+            });
+            
+            textarea.addEventListener("blur", function() {
+                this.rows = 4;
+            });
+        }
     }
 });

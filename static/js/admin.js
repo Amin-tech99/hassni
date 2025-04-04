@@ -1,6 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Admin page initialized");
     
+    // Detect mobile device
+    const isMobile = window.innerWidth < 768;
+    
     // File upload preview
     const fileInput = document.getElementById('audio_file');
     const fileLabel = document.querySelector('.custom-file-label');
@@ -20,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const submitBtn = uploadForm.querySelector('button[type="submit"]');
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading & Processing...';
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
             }
         });
     }
@@ -141,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .finally(() => {
                 // Reset button
                 this.disabled = false;
-                this.textContent = 'Approve';
+                this.innerHTML = isMobile ? '<i class="fas fa-check"></i>' : 'Approve';
             });
         });
     });
@@ -195,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .finally(() => {
                 // Reset button
                 this.disabled = false;
-                this.textContent = 'Reject';
+                this.innerHTML = isMobile ? '<i class="fas fa-times"></i>' : 'Reject';
             });
         });
     });
@@ -212,12 +215,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (isEditing) {
                     // Entering edit mode
-                    this.textContent = 'Save';
+                    this.innerHTML = isMobile ? '<i class="fas fa-save"></i>' : 'Save';
                     textInput.classList.add('border', 'border-primary');
                     textInput.focus();
                 } else {
                     // Saving changes
-                    this.textContent = 'Edit';
+                    this.innerHTML = isMobile ? '<i class="fas fa-edit"></i>' : 'Edit';
                     textInput.classList.remove('border', 'border-primary');
                     
                     // Save the changes if already approved
@@ -251,11 +254,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Delete audio confirmation
-    const deleteButtons = document.querySelectorAll('.delete-audio-btn');
+    const deleteButtons = document.querySelectorAll('.delete-audio');
     deleteButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            if (!confirm('Are you sure you want to delete this audio file and all associated clips? This action cannot be undone.')) {
-                e.preventDefault();
+        button.addEventListener('click', function() {
+            const audioId = this.getAttribute('data-audio-id');
+            const audioName = this.getAttribute('data-audio-name');
+            
+            if (confirm(`Are you sure you want to delete "${audioName}"? This action cannot be undone and will delete all associated clips and transcriptions.`)) {
+                window.location.href = `/admin/delete_audio/${audioId}`;
             }
         });
     });
@@ -274,34 +280,51 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("Review audio loaded successfully");
         });
         
-        const speedButtons = player.parentElement.querySelectorAll('.speed-btn');
-        console.log(`Found ${speedButtons.length} speed buttons for player`);
+        // For mobile optimization
+        if (isMobile) {
+            // Make audio controls more touch-friendly
+            player.style.height = "40px";
+        }
         
-        speedButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const speed = parseFloat(button.getAttribute('data-speed'));
-                console.log(`Setting playback speed to ${speed}`);
-                player.playbackRate = speed;
-                
-                // Update active button within this container
-                const container = button.closest('.speed-controls');
-                if (container) {
-                    container.querySelectorAll('.speed-btn').forEach(btn => {
-                        btn.classList.remove('btn-primary');
-                        btn.classList.add('btn-outline-primary');
-                    });
-                    button.classList.remove('btn-outline-primary');
-                    button.classList.add('btn-primary');
-                }
-            });
-        });
+        // Add custom speed controls if needed
+        const parentRow = player.closest('tr');
+        if (parentRow) {
+            // You could add custom playback speed controls here if needed
+        }
     });
+    
+    // Mobile specific optimizations
+    if (isMobile) {
+        // Make table cells more readable on mobile
+        const tableCells = document.querySelectorAll('td, th');
+        tableCells.forEach(cell => {
+            if (cell.classList.contains('text-center')) {
+                cell.style.padding = "0.5rem";
+            }
+        });
+        
+        // Enhance button touch targets
+        const allButtons = document.querySelectorAll('.btn-sm');
+        allButtons.forEach(btn => {
+            btn.classList.add('mb-1', 'me-1');
+            btn.style.minWidth = "36px";
+            btn.style.minHeight = "36px";
+        });
+        
+        // Add scroll indicator for tables
+        const allTables = document.querySelectorAll('.table-responsive');
+        allTables.forEach(tableContainer => {
+            if (tableContainer.scrollWidth > tableContainer.clientWidth) {
+                // Add indicator that table is scrollable
+                const indicator = document.createElement('div');
+                indicator.className = 'text-center text-muted small mt-2';
+                indicator.textContent = 'Swipe to see more →';
+                tableContainer.parentNode.insertBefore(indicator, tableContainer.nextSibling);
+            }
+        });
+    }
     
     // Check all audio source URLs
     const allAudioPlayers = document.querySelectorAll('audio');
     console.log(`Found ${allAudioPlayers.length} total audio players on the page`);
-    
-    allAudioPlayers.forEach((player, index) => {
-        console.log(`Audio player ${index+1} source: ${player.src}`);
-    });
 });

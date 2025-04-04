@@ -10,14 +10,14 @@
         {% if clips_by_audio %}
             <div class="row">
                 {% for audio_id, data in clips_by_audio.items() %}
-                    <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="col-12 col-sm-6 col-lg-4 mb-4">
                         <div class="card h-100">
                             <div class="card-header bg-primary text-white">
-                                <h5 class="mb-0">{{ data.audio.filename }}</h5>
+                                <h5 class="mb-0 text-truncate" title="{{ data.audio.filename }}">{{ data.audio.filename }}</h5>
                             </div>
                             <div class="card-body">
-                                <div class="mb-3">
-                                    <span class="badge bg-primary me-1">{{ data.progress.total }} Clips</span>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span class="badge bg-primary">{{ data.progress.total }} Clips</span>
                                     <span class="badge bg-success">{{ data.progress.completed }} Completed</span>
                                 </div>
                                 
@@ -32,7 +32,7 @@
                                     {% endif %}
                                 </div>
                                 
-                                <div class="d-grid">
+                                <div class="d-grid gap-2">
                                     <a href="{{ url_for('transcribe_audio', audio_id=data.audio.id) }}" class="btn btn-primary">
                                         {% if data.progress.completed == data.progress.total %}
                                             <i class="fas fa-check-circle me-1"></i> View Completed
@@ -40,6 +40,11 @@
                                             <i class="fas fa-headphones me-1"></i> Continue Transcribing
                                         {% endif %}
                                     </a>
+                                    {% if data.progress.completed > 0 %}
+                                    <div class="progress-info text-center small">
+                                        <span class="text-success">{{ (data.progress.completed / data.progress.total) * 100 | int }}% complete</span>
+                                    </div>
+                                    {% endif %}
                                 </div>
                             </div>
                             <div class="card-footer text-muted">
@@ -51,8 +56,13 @@
             </div>
         {% else %}
             <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i> You don't have any transcription tasks assigned yet. 
-                Please wait for the administrator to assign clips to you.
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-info-circle me-3 fs-4"></i>
+                    <div>
+                        <p class="mb-0">You don't have any transcription tasks assigned yet.</p>
+                        <p class="mb-0">Please wait for the administrator to assign clips to you.</p>
+                    </div>
+                </div>
             </div>
         {% endif %}
     </div>

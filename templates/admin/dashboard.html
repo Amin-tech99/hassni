@@ -12,7 +12,7 @@
             <div class="card-body">
                 {% if stats %}
                 <div class="row mb-3">
-                    <div class="col-md-3">
+                    <div class="col-6 col-md-3 mb-3 mb-md-0">
                         <div class="card text-center h-100">
                             <div class="card-body">
                                 <h2 class="card-title">{{ stats.total_clips }}</h2>
@@ -20,143 +20,114 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-6 col-md-3 mb-3 mb-md-0">
                         <div class="card text-center h-100">
                             <div class="card-body">
                                 <h2 class="card-title">{{ stats.assigned_clips }}</h2>
-                                <p class="card-text">Assigned Clips</p>
+                                <p class="card-text">Assigned</p>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-6 col-md-3">
                         <div class="card text-center h-100">
                             <div class="card-body">
                                 <h2 class="card-title">{{ stats.submitted_clips }}</h2>
-                                <p class="card-text">Submitted Clips</p>
+                                <p class="card-text">Submitted</p>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-6 col-md-3">
                         <div class="card text-center h-100 border-success">
                             <div class="card-body">
-                                <h2 class="card-title text-success">{{ stats.completed_clips }}</h2>
-                                <p class="card-text">Approved Clips</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <h5>Overall Progress</h5>
-                        <div class="progress" style="height: 25px;">
-                            <div class="progress-bar bg-success" role="progressbar" 
-                                style="width: {{ stats.completed_percentage }}%;" 
-                                aria-valuenow="{{ stats.completed_percentage }}" aria-valuemin="0" aria-valuemax="100">
-                                {{ stats.completed_clips }} Approved
-                            </div>
-                            <div class="progress-bar bg-warning" role="progressbar" 
-                                style="width: {{ stats.submitted_percentage }}%;" 
-                                aria-valuenow="{{ stats.submitted_percentage }}" aria-valuemin="0" aria-valuemax="100">
-                                {{ stats.submitted_clips }} Pending Review
-                            </div>
-                            <div class="progress-bar bg-info" role="progressbar" 
-                                style="width: {{ stats.assigned_percentage - stats.submitted_percentage - stats.completed_percentage }}%;" 
-                                aria-valuenow="{{ stats.assigned_percentage - stats.submitted_percentage - stats.completed_percentage }}" 
-                                aria-valuemin="0" aria-valuemax="100">
-                                {{ stats.assigned_clips - stats.submitted_clips - stats.completed_clips }} In Progress
-                            </div>
-                        </div>
-                        <div class="text-muted mt-2">
-                            <small>* Only approved transcriptions will be included in the exported dataset</small>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header bg-light">
-                                <h5 class="mb-0">Transcription Status</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Draft:</span>
-                                    <span class="badge bg-secondary">{{ stats.draft_transcriptions }}</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Submitted:</span>
-                                    <span class="badge bg-warning">{{ stats.submitted_transcriptions }}</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Approved:</span>
-                                    <span class="badge bg-success">{{ stats.approved_transcriptions }}</span>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <span>Rejected:</span>
-                                    <span class="badge bg-danger">{{ stats.rejected_transcriptions }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header bg-light">
-                                <h5 class="mb-0">Quick Actions</h5>
-                            </div>
-                            <div class="card-body">
-                                <a href="{{ url_for('review_transcriptions') }}" class="btn btn-primary mb-2 w-100">
-                                    <i class="fas fa-check-double me-2"></i>Review Transcriptions
-                                    {% if stats.submitted_transcriptions > 0 %}
-                                    <span class="badge bg-white text-primary ms-2">{{ stats.submitted_transcriptions }}</span>
-                                    {% endif %}
-                                </a>
-                                <a href="{{ url_for('register') }}" class="btn btn-outline-primary w-100">
-                                    <i class="fas fa-user-plus me-2"></i>Register New User
-                                </a>
+                                <h2 class="card-title text-success">{{ stats.approved_clips }}</h2>
+                                <p class="card-text">Approved</p>
                             </div>
                         </div>
                     </div>
                 </div>
                 {% else %}
-                <div class="alert alert-info">
-                    No statistics available yet. Upload audio files and start transcribing to see project statistics.
-                </div>
+                <p class="lead text-center">No statistics available yet.</p>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-12 mb-4">
+<div class="row mb-4">
+    <div class="col-md-12">
         <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0"><i class="fas fa-upload me-2"></i>Upload Audio</h4>
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center flex-wrap">
+                <h4 class="mb-0 mb-2 mb-sm-0"><i class="fas fa-list-alt me-2"></i>Audio Files</h4>
+                <div class="d-flex flex-wrap">
+                    <a href="{{ url_for('export_all_zip_dataset') }}" class="btn btn-success btn-sm me-2 mb-2 mb-sm-0">
+                        <i class="fas fa-download me-1"></i> Download All ZIP
+                    </a>
+                    <a href="{{ url_for('upload_audio') }}" class="btn btn-info btn-sm">
+                        <i class="fas fa-upload me-1"></i> Upload Audio
+                    </a>
+                </div>
             </div>
-            <div class="card-body">
-                <form id="upload-form" method="POST" action="{{ url_for('upload_audio') }}" enctype="multipart/form-data">
-                    {{ form.hidden_tag() }}
-                    
-                    <div class="mb-3">
-                        <label for="audio_file" class="form-label">Select Audio File</label>
-                        <div class="input-group">
-                            {{ form.audio_file(class="form-control", id="audio_file", accept=".wav,.mp3,.aac,.ogg,.m4a,.flac") }}
-                            {{ form.submit(class="btn btn-primary") }}
-                        </div>
-                        {% if form.audio_file.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.audio_file.errors %}
-                                    {{ error }}
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>File Name</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center">Clips</th>
+                                <th class="text-center">Assigned</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audio-list">
+                            {% if audio_files %}
+                                {% for audio in audio_files %}
+                                <tr>
+                                    <td>{{ audio.filename }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-{{ 'success' if audio.status == 'processed' else 'warning' if audio.status == 'processing' else 'secondary' }}">
+                                            {{ audio.status }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">{{ audio.clip_count }}</td>
+                                    <td class="text-center">{{ audio.assigned_count }}</td>
+                                    <td class="text-center">
+                                        <div class="btn-group">
+                                            {% if audio.status == 'processed' %}
+                                                <a href="{{ url_for('assign_clips', audio_id=audio.id) }}" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-user-plus"></i><span class="d-none d-md-inline"> Assign</span>
+                                                </a>
+                                                <a href="{{ url_for('review_audio_transcriptions', audio_id=audio.id) }}" class="btn btn-sm btn-secondary">
+                                                    <i class="fas fa-tasks"></i><span class="d-none d-md-inline"> Review</span>
+                                                </a>
+                                                <a href="{{ url_for('export_zip_dataset', audio_id=audio.id) }}" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-download"></i><span class="d-none d-md-inline"> ZIP</span>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-danger delete-audio" data-audio-id="{{ audio.id }}" data-audio-name="{{ audio.filename }}">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn btn-sm btn-secondary" disabled>
+                                                    <i class="fas fa-spinner fa-spin"></i><span class="d-none d-md-inline"> Processing</span>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
                                 {% endfor %}
-                            </div>
-                        {% endif %}
-                        <div class="form-text">
-                            Supported formats: WAV, MP3, AAC, OGG, M4A, FLAC. Maximum file size: 500MB. 
-                            The file will be processed to remove silence and split into clips.
-                        </div>
-                    </div>
-                </form>
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center">
+                                        <p class="lead my-3">No audio files uploaded yet.</p>
+                                        <a href="{{ url_for('upload_audio') }}" class="btn btn-primary">
+                                            <i class="fas fa-upload me-1"></i> Upload Audio
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -166,86 +137,48 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header bg-primary text-white">
-                <div class="d-flex justify-content-between align-items-center"><h4 class="mb-0"><i class="fas fa-file-audio me-2"></i>Audio Files</h4><a href="{{ url_for('export_all_zip_dataset') }}" class="btn btn-success btn-sm"><i class="fas fa-download me-1"></i> Download All Approved Clips</a></div>
+                <h4 class="mb-0"><i class="fas fa-users me-2"></i>Users</h4>
             </div>
-            <div class="card-body">
-                {% if audio_files %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th class="text-center">Role</th>
+                                <th class="text-center">Assigned Clips</th>
+                                <th class="text-center">Submitted Transcriptions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if users %}
+                                {% for user in users %}
                                 <tr>
-                                    <th>Filename</th>
-                                    <th>Upload Date</th>
-                                    <th>Status</th>
-                                    <th>Clips</th>
-                                    <th>Progress</th>
-                                    <th>Actions</th>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-{{ 'primary' if user.role == 'admin' else 'info' }}">
+                                            {{ user.role }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">{{ user.assigned_clips_count }}</td>
+                                    <td class="text-center">{{ user.submitted_transcriptions_count }}</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {% for audio in audio_files %}
-                                    <tr>
-                                        <td>{{ audio.filename }}</td>
-                                        <td>{{ audio.upload_date.strftime('%Y-%m-%d %H:%M') }}</td>
-                                        <td>
-                                            {% if audio.status == 'pending' %}
-                                                <span class="badge bg-secondary">Pending</span>
-                                            {% elif audio.status == 'processing' %}
-                                                <span class="badge bg-info">Processing</span>
-                                            {% elif audio.status == 'processed' %}
-                                                <span class="badge bg-success">Processed</span>
-                                            {% elif audio.status == 'error' %}
-                                                <span class="badge bg-danger">Error</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>{{ audio.clip_count }}</td>
-                                        <td>
-                                            {% set assigned_count = audio.clips|selectattr('status', 'ne', 'unassigned')|list|length %}
-                                            {% set submitted_count = audio.clips|selectattr('status', 'equalto', 'submitted')|list|length %}
-                                            {% set completed_count = audio.clips|selectattr('status', 'equalto', 'completed')|list|length %}
-                                            {% if audio.clip_count > 0 %}
-                                                <div class="progress" title="{{ submitted_count }}/{{ audio.clip_count }} submitted, {{ completed_count }}/{{ audio.clip_count }} approved">
-                                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ (completed_count / audio.clip_count) * 100 }}%" aria-valuenow="{{ completed_count }}" aria-valuemin="0" aria-valuemax="{{ audio.clip_count }}"></div>
-                                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ (submitted_count / audio.clip_count) * 100 }}%" aria-valuenow="{{ submitted_count }}" aria-valuemin="0" aria-valuemax="{{ audio.clip_count }}"></div>
-                                                </div>
-                                                <div class="d-flex justify-content-between mt-1">
-                                                    <small class="text-muted">{{ submitted_count }} pending review</small>
-                                                    <small class="text-muted">{{ completed_count }} approved</small>
-                                                </div>
-                                            {% else %}
-                                                <span class="badge bg-secondary">No clips</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <div class="btn-group" role="group">
-                                                {% if audio.status == 'processed' and audio.clip_count > 0 %}
-                                                    <a href="{{ url_for('assign_clips', audio_id=audio.id) }}" class="btn btn-sm btn-outline-primary" title="Assign Clips">
-                                                        <i class="fas fa-user-check"></i>
-                                                    </a>
-                                                    <a href="{{ url_for('review_audio_transcriptions', audio_id=audio.id) }}" class="btn btn-sm btn-outline-info" title="Review Transcriptions">
-                                                        <i class="fas fa-check-double"></i>
-                                                    </a>
-                                                    <a href="{{ url_for('export_dataset', audio_id=audio.id) }}" class="btn btn-sm btn-outline-success" title="Export Dataset">
-                                                        <i class="fas fa-file-export"></i>
-                                                    </a>
-                                                {% endif %}
-                                                <form method="POST" action="{{ url_for('delete_audio', audio_id=audio.id) }}" class="d-inline">
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger delete-audio-btn" title="Delete Audio">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
                                 {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i> No audio files uploaded yet. Upload an audio file to begin.
-                    </div>
-                {% endif %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center">
+                                        <p class="lead my-3">No users registered yet.</p>
+                                        <a href="{{ url_for('register') }}" class="btn btn-primary">
+                                            <i class="fas fa-user-plus me-1"></i> Register User
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

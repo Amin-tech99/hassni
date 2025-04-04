@@ -5,6 +5,15 @@ body {
     min-height: 100vh;
 }
 
+/* Responsive container padding for small screens */
+@media (max-width: 576px) {
+    .container {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+}
+
+/* Clip list styles */
 .clip-list .clip-item {
     padding: 12px 15px;
     border-bottom: 1px solid #333;
@@ -20,7 +29,53 @@ body {
     border-left: 4px solid #0d6efd;
 }
 
+/* Audio player responsive sizing */
 .audio-player {
     width: 100%;
+    max-width: 100%;
 }
 
+/* Responsive card layouts for small screens */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 20px;
+    }
+    
+    /* Fix for button groups on mobile */
+    .btn-group, .btn-group-vertical {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    
+    /* Adjust button spacing on mobile */
+    .btn {
+        margin-bottom: 5px;
+    }
+}
+
+/* Responsive tables for small screens */
+@media (max-width: 768px) {
+    table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+    }
+    
+    /* Smaller font sizes for mobile tables */
+    table th, table td {
+        font-size: 0.9rem;
+        padding: 0.5rem;
+    }
+}
+
+/* Footer responsive styles */
+@media (max-width: 576px) {
+    footer .d-flex {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    footer .text-muted {
+        margin-bottom: 5px;
+    }
+}

@@ -18,32 +18,33 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && ldconfig  # Refresh the dynamic linker cache
 
-# Add FFmpeg repository to get the correct version of libraries
+# Install FFmpeg and related libraries needed by torchaudio
 RUN apt-get update && apt-get install -y --no-install-recommends \
     software-properties-common \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install specific FFmpeg libraries needed by torchaudio
+# Use a more reliable approach to install FFmpeg libraries
+# Instead of specifying exact versions that might not be available,
+# we install the packages without version suffixes and let apt resolve dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libavdevice58 \
-    libavfilter7 \
-    libavformat58 \
-    libavcodec58 \
-    libswresample3 \
-    libswscale5 \
-    libavutil56 \
+    libavdevice-dev \
+    libavfilter-dev \
+    libavformat-dev \
+    libavcodec-dev \
+    libswresample-dev \
+    libswscale-dev \
+    libavutil-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && ldconfig  # Refresh the dynamic linker cache
 
 # Create symbolic links to ensure libraries are found in expected locations
-RUN ln -sf /usr/lib/x86_64-linux-gnu/libavdevice.so.58 /usr/lib/libavdevice.so.58 && \
-    ln -sf /usr/lib/x86_64-linux-gnu/libavformat.so.58 /usr/lib/libavformat.so.58 && \
-    ln -sf /usr/lib/x86_64-linux-gnu/libavcodec.so.58 /usr/lib/libavcodec.so.58 && \
-    ln -sf /usr/lib/x86_64-linux-gnu/libavutil.so.56 /usr/lib/libavutil.so.56 && \
-    ln -sf /usr/lib/x86_64-linux-gnu/libswresample.so.3 /usr/lib/libswresample.so.3 && \
-    ln -sf /usr/lib/x86_64-linux-gnu/libswscale.so.5 /usr/lib/libswscale.so.5
+# Using wildcard to find the actual library versions installed by apt
+RUN for lib in libavdevice libavformat libavcodec libavutil libswresample libswscale; do \
+      find /usr/lib/x86_64-linux-gnu -name "${lib}.so.*" -type f -exec basename {} \; | sort -V | tail -n 1 | \
+      xargs -I{} ln -sf /usr/lib/x86_64-linux-gnu/{} /usr/lib/{}; \
+    done
 
 # Copy requirements first for better caching
 COPY requirements.txt .
@@ -60,8 +61,8 @@ COPY . .
 RUN python -c "import subprocess; subprocess.run(['ffmpeg', '-version'], check=True); print('FFmpeg verification successful')" && \
     echo "Checking for FFmpeg libraries..." && \
     ls -la /usr/lib/x86_64-linux-gnu/libav* /usr/lib/x86_64-linux-gnu/libsw* && \
-    echo "Verifying specific FFmpeg libraries needed by torchaudio:" && \
-    ls -la /usr/lib/x86_64-linux-gnu/libavdevice.so* /usr/lib/x86_64-linux-gnu/libavformat.so* /usr/lib/x86_64-linux-gnu/libavcodec.so*
+    echo "Verifying FFmpeg libraries needed by torchaudio:" && \
+    find /usr/lib -name "libavdevice.so*" -o -name "libavformat.so*" -o -name "libavcodec.so*" -o -name "libswresample.so*" -o -name "libswscale.so*" -o -name "libavutil.so*"
 
 # Create a test script to verify torchaudio can access FFmpeg
 RUN echo 'import os\nimport sys\nimport torch\nimport torchaudio\n\nprint("PyTorch version:", torch.__version__)\nprint("Torchaudio version:", torchaudio.__version__)\nprint("Python version:", sys.version)\nprint("\\nEnvironment variables:")\nprint(f"LD_LIBRARY_PATH: {os.environ.get(\'LD_LIBRARY_PATH\', \'Not set\')}")\n\nprint("\\nChecking for FFmpeg libraries:")\nos.system("ldconfig -p | grep libavdevice")\nos.system("ldconfig -p | grep libavformat")\nos.system("ldconfig -p | grep libavcodec")\n\nprint("\\nChecking torchaudio FFmpeg availability...")\ntry:\n    torchaudio.utils.ffmpeg_utils.get_video_metadata("nonexistent.mp4")\n    print("FFmpeg libraries found by torchaudio")\nexcept FileNotFoundError:\n    print("File not found error - expected for nonexistent file")\nexcept ImportError as e:\n    print("ImportError:", str(e))\n    print("\\nDetailed library information:")\n    os.system("find /usr -name \"libavdevice*\" -o -name \"libavformat*\" -o -name \"libavcodec*\"")\n    exit(1)\nexcept Exception as e:\n    print("Other error:", str(e))\n    if "FFmpeg" in str(e):\n        print("\\nDetailed library information:")\n        os.system("find /usr -name \"libavdevice*\" -o -name \"libavformat*\" -o -name \"libavcodec*\"")\n        exit(1)' > /tmp/test_torchaudio.py && \

@@ -18,4 +18,5 @@ RUN python -m venv /opt/venv && . /opt/venv/bin/activate && pip install --no-cac
 ENV PORT=5000
 EXPOSE 5000
 
-CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:$PORT", "--timeout", "120", "--workers", "2"]
+# Use shell form to allow environment variable expansion
+CMD gunicorn main:app --bind 0.0.0.0:${PORT} --timeout 120 --workers 2

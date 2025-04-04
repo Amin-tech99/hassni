@@ -86,7 +86,21 @@ with app.app_context():
 # Health check route for Railway deployment
 @app.route('/health')
 def health_check():
-    return 'OK', 200
+    try:
+        # Test database connection
+        db.session.execute('SELECT 1')
+        db_status = "OK"
+    except Exception as e:
+        db_status = f"Error: {str(e)}"
+    
+    # Return a comprehensive health check
+    health_data = {
+        "status": "OK",
+        "timestamp": datetime.now().isoformat(),
+        "database": db_status,
+        "version": "1.0.0"
+    }
+    return jsonify(health_data), 200
 
 # Authentication routes
 @app.route('/login', methods=['GET', 'POST'])

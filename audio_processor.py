@@ -1,10 +1,21 @@
 import os
 import logging
 import shutil
+import subprocess
+import tempfile
+from pathlib import Path
 from urllib.parse import urlparse
 
 # Set up logging
 logger = logging.getLogger(__name__)
+
+# Check if FFmpeg is available
+try:
+    subprocess.run(['ffmpeg', '-version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    FFMPEG_AVAILABLE = True
+except (FileNotFoundError, subprocess.SubprocessError):
+    logger.warning("FFmpeg not found. Audio processing functionality will be limited.")
+    FFMPEG_AVAILABLE = False
 
 # Initialize variables to avoid LSP errors
 TORCH_AVAILABLE = False
@@ -139,6 +150,47 @@ def get_silero_vad_model():
         else:
             raise ValueError("Failed to download silero-vad model")
 
+def ensure_wav_format(file_path):
+    """
+    Convert audio file to WAV format if it's not already in WAV format
+    Returns the path to the WAV file (either the original or converted file)
+    """
+    # If the file is already a WAV file, just return the path
+    if file_path.lower().endswith('.wav'):
+        return file_path
+    
+    if not FFMPEG_AVAILABLE:
+        logger.warning("FFmpeg not available, cannot convert audio format")
+        return file_path
+    
+    try:
+        # Create a temporary directory for the converted file
+        temp_dir = tempfile.mkdtemp()
+        file_name = os.path.basename(file_path)
+        base_name = os.path.splitext(file_name)[0]
+        wav_path = os.path.join(temp_dir, f"{base_name}.wav")
+        
+        # Use FFmpeg to convert the file to WAV format
+        logger.info(f"Converting {file_path} to WAV format")
+        subprocess.run([
+            'ffmpeg', 
+            '-i', file_path, 
+            '-acodec', 'pcm_s16le',  # Linear PCM format, 16-bit depth
+            '-ar', '44100',          # 44.1kHz sample rate
+            '-ac', '1',              # Mono channel
+            '-y',                    # Overwrite output file if it exists
+            wav_path
+        ], check=True, capture_output=True)
+        
+        logger.info(f"Converted to WAV: {wav_path}")
+        return wav_path
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error converting to WAV: {e.stderr.decode() if e.stderr else str(e)}")
+        return file_path
+    except Exception as e:
+        logger.error(f"Unexpected error in ensure_wav_format: {str(e)}")
+        return file_path
+
 def process_audio_file(file_path, audio_id, output_folder):
     """
     Process an audio file using silero-vad to extract speech segments
@@ -152,20 +204,22 @@ def process_audio_file(file_path, audio_id, output_folder):
     audio_folder = os.path.join(output_folder, f"audio_{audio_id}")
     os.makedirs(audio_folder, exist_ok=True)
     
+    # Convert to WAV format if needed
+    wav_file_path = ensure_wav_format(file_path)
+    
     try:
         if not TORCH_AVAILABLE:
             # If torch is not available, just create a single clip as a copy of the original file
             logger.warning("Torch not available, creating single clip from entire file")
-            import shutil
             clip_path = os.path.join(audio_folder, "clip_1.wav")
-            shutil.copy(file_path, clip_path)
+            shutil.copy(wav_file_path, clip_path)
             return [clip_path]
         
         # Load the Silero VAD model
         vad_model, get_speech_timestamps, save_audio, read_audio = get_silero_vad_model()
         
         # Load the audio file
-        audio = read_audio(file_path, sampling_rate=16000)
+        audio = read_audio(wav_file_path, sampling_rate=16000)
         
         # Get speech timestamps
         logger.info("Detecting speech segments...")
@@ -181,16 +235,31 @@ def process_audio_file(file_path, audio_id, output_folder):
             clip_paths.append(clip_path)
         
         logger.info(f"Audio processing complete. {len(clip_paths)} clips saved.")
+        
+        # Clean up temporary WAV file if it was created
+        if wav_file_path != file_path and os.path.exists(wav_file_path):
+            try:
+                os.remove(wav_file_path)
+            except Exception as e:
+                logger.warning(f"Failed to clean up temporary WAV file: {str(e)}")
+                
         return clip_paths
         
     except Exception as e:
         logger.error(f"Error processing audio: {str(e)}")
         # As a fallback on error, create a dummy clip (in production this should handle differently)
         try:
-            import shutil
             clip_path = os.path.join(audio_folder, "clip_error_fallback.wav")
-            shutil.copy(file_path, clip_path)
+            shutil.copy(wav_file_path, clip_path)
             logger.warning(f"Created fallback clip due to processing error: {clip_path}")
+            
+            # Clean up temporary WAV file if it was created
+            if wav_file_path != file_path and os.path.exists(wav_file_path):
+                try:
+                    os.remove(wav_file_path)
+                except Exception as clean_error:
+                    logger.warning(f"Failed to clean up temporary WAV file: {str(clean_error)}")
+                    
             return [clip_path]
         except Exception as copy_error:
             logger.error(f"Error creating fallback clip: {str(copy_error)}")

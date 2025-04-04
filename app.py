@@ -154,59 +154,106 @@ def admin_dashboard():
 def upload_audio():
     if current_user.role != 'admin':
         return jsonify({'error': 'Unauthorized'}), 403
-        
-    form = AudioUploadForm()
-    if form.validate_on_submit():
-        audio_file = form.audio_file.data
-        filename = secure_filename(audio_file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        audio_file.save(file_path)
-        
-        # Create Audio entry
-        audio = Audio(
-            filename=filename,
-            original_path=file_path,
-            upload_date=datetime.now(),
-            status='processing',
-            uploader_id=current_user.id
-        )
-        db.session.add(audio)
-        db.session.commit()
-        
-        # Process the audio file (in a separate thread for production)
-        try:
-            clips = process_audio_file(file_path, audio.id, app.config['UPLOAD_FOLDER'])
-            
-            # Update status and save clips to database
-            audio.status = 'processed'
-            audio.clip_count = len(clips)
-            
-            for i, clip_path in enumerate(clips):
-                clip_filename = os.path.basename(clip_path)
-                clip = Clip(
-                    audio_id=audio.id,
-                    filename=clip_filename,
-                    path=clip_path,
-                    order=i + 1,
-                    status='unassigned'
+    
+    # Wrap the entire function in a try-except to catch any unexpected errors
+    try:
+        form = AudioUploadForm()
+        if form.validate_on_submit():
+            try:
+                # First, save the uploaded file safely
+                audio_file = form.audio_file.data
+                filename = secure_filename(audio_file.filename)
+                
+                # Ensure the filename is unique to avoid overwrites
+                base_name, ext = os.path.splitext(filename)
+                timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+                unique_filename = f"{base_name}_{timestamp}{ext}"
+                
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                
+                # Create upload directory if it doesn't exist
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                
+                # Save the file
+                logger.info(f"Saving uploaded file to {file_path}")
+                audio_file.save(file_path)
+                
+                # Create Audio entry with pending status
+                audio = Audio(
+                    filename=unique_filename,
+                    original_path=file_path,
+                    upload_date=datetime.now(),
+                    status='pending',  # Start with pending status
+                    uploader_id=current_user.id
                 )
-                db.session.add(clip)
+                db.session.add(audio)
+                db.session.commit()
+                
+                # Update status to processing
+                audio.status = 'processing'
+                db.session.commit()
+                
+                # Process the audio file
+                logger.info(f"Starting audio processing for {file_path}")
+                clips = process_audio_file(file_path, audio.id, app.config['UPLOAD_FOLDER'])
+                
+                # Update status and save clips to database
+                audio.status = 'processed'
+                audio.clip_count = len(clips)
+                
+                for i, clip_path in enumerate(clips):
+                    clip_filename = os.path.basename(clip_path)
+                    clip = Clip(
+                        audio_id=audio.id,
+                        filename=clip_filename,
+                        path=clip_path,
+                        order=i + 1,
+                        status='unassigned'
+                    )
+                    db.session.add(clip)
+                
+                db.session.commit()
+                flash(f'Audio file processed successfully. {len(clips)} clips were extracted.', 'success')
+                
+            except Exception as e:
+                logger.error(f"Error processing audio: {str(e)}", exc_info=True)
+                
+                # Make sure we have a valid audio record even if processing failed
+                try:
+                    # Check if audio was already created
+                    if 'audio' in locals() and audio:
+                        audio.status = 'error'
+                        db.session.commit()
+                    else:
+                        # Create a minimal record if we failed before creating one
+                        audio = Audio(
+                            filename=filename if 'filename' in locals() else "unknown.wav",
+                            original_path=file_path if 'file_path' in locals() else "",
+                            upload_date=datetime.now(),
+                            status='error',
+                            uploader_id=current_user.id
+                        )
+                        db.session.add(audio)
+                        db.session.commit()
+                except Exception as db_error:
+                    logger.error(f"Failed to update database after processing error: {str(db_error)}")
+                
+                flash(f'Error processing audio: {str(e)}. Please try again with a different file or contact support.', 'danger')
             
-            db.session.commit()
-            flash(f'Audio file processed successfully. {len(clips)} clips were extracted.', 'success')
-        except Exception as e:
-            logger.error(f"Error processing audio: {str(e)}")
-            audio.status = 'error'
-            db.session.commit()
-            flash(f'Error processing audio: {str(e)}', 'danger')
-            
+            return redirect(url_for('admin_dashboard'))
+        
+        # Handle form validation errors
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"{field}: {error}", 'danger')
+        
         return redirect(url_for('admin_dashboard'))
-    
-    for field, errors in form.errors.items():
-        for error in errors:
-            flash(f"{field}: {error}", 'danger')
-    
-    return redirect(url_for('admin_dashboard'))
+        
+    except Exception as e:
+        # Catch any unexpected errors
+        logger.error(f"Unexpected error in upload_audio: {str(e)}", exc_info=True)
+        flash('An unexpected error occurred. Please try again later.', 'danger')
+        return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/delete_audio/<int:audio_id>', methods=['POST'])
 @login_required

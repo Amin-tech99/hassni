@@ -18,9 +18,9 @@ class RegistrationForm(FlaskForm):
     submit = SubmitField('Register User')
 
 class AudioUploadForm(FlaskForm):
-    audio_file = FileField('Audio File (.wav format only)', validators=[
+    audio_file = FileField('Audio File', validators=[
         FileRequired(),
-        FileAllowed(['wav'], 'WAV files only!')
+        FileAllowed(['wav', 'mp3', 'aac', 'ogg', 'm4a', 'flac'], 'Audio files only (WAV, MP3, AAC, OGG, M4A, FLAC)!')
     ])
     submit = SubmitField('Upload & Process')
 

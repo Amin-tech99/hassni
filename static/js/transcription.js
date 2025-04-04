@@ -18,6 +18,34 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
     
+    // Handle transcription form submission
+    const transcriptionForm = document.getElementById("transcription-form");
+    const submitTypeInput = document.getElementById("submit_type");
+    
+    if (transcriptionForm && submitTypeInput) {
+        transcriptionForm.addEventListener("submit", function(e) {
+            // Set the submit_type to 'save' by default when the form is submitted
+            submitTypeInput.value = 'save';
+            console.log("Form submitted with submit_type:", submitTypeInput.value);
+        });
+        
+        // Add submit button for saving and submitting
+        const saveButton = transcriptionForm.querySelector("button[type='submit']");
+        const submitButton = document.createElement("button");
+        submitButton.type = "button";
+        submitButton.className = "btn btn-success ms-2";
+        submitButton.textContent = "Submit";
+        submitButton.addEventListener("click", function() {
+            submitTypeInput.value = 'submit';
+            console.log("Setting submit_type to:", submitTypeInput.value);
+            transcriptionForm.submit();
+        });
+        
+        if (saveButton) {
+            saveButton.parentNode.insertBefore(submitButton, saveButton.nextSibling);
+        }
+    }
+    
     // Clip selection in sidebar
     const clipItems = document.querySelectorAll(".clip-item");
     console.log(`Found ${clipItems.length} clip items`);
@@ -48,6 +76,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     console.log(`Set clip ID in form: ${clipId}`);
                 } else {
                     console.warn("Clip ID input not found in form");
+                }
+                
+                // Load existing transcription if available
+                const clipStatus = this.getAttribute("data-clip-status");
+                const textArea = document.getElementById("text");
+                
+                if (textArea) {
+                    // Use AJAX to fetch transcription text if needed
+                    // For now, we're assuming the transcription is loaded with the page
+                    console.log(`Clip status: ${clipStatus}`);
                 }
             });
         });

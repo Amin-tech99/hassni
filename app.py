@@ -88,10 +88,7 @@ with app.app_context():
         db.session.commit()
         logger.info("Admin user created")
 
-# Health check route for Railway deployment
-@app.route('/health')
-def health_check():
-    return 'OK', 200
+# Health check route for Railway deployment is already defined above
 
 # Authentication routes
 @app.route('/login', methods=['GET', 'POST'])

@@ -1,9 +1,17 @@
 {
   "deploy": {
-    "startCommand": "./prestart.sh && python -m gunicorn main:app --timeout 120",
+    "startCommand": "./prestart.sh && python -m gunicorn main:app --timeout 120 --bind 0.0.0.0:$PORT",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10,
     "healthcheckPath": "/health",
-    "healthcheckTimeout": 60
-  }
+    "healthcheckTimeout": 60,
+    "healthcheckInterval": 15,
+    "envs": {
+      "PYTHON_VERSION": "3.11"
+    },
+    "numReplicas": 1,
+    "sleepApplication": false,
+    "healthcheckPort": "PORT"
+  },
+  "$schema": "https://railway.app/railway.schema.json"
 }

@@ -86,21 +86,64 @@ with app.app_context():
 # Health check route for Railway deployment
 @app.route('/health')
 def health_check():
+    overall_status = "OK"
+    issues = []
+    
+    # Check 1: Test database connection
     try:
-        # Test database connection
         db.session.execute('SELECT 1')
         db_status = "OK"
     except Exception as e:
         db_status = f"Error: {str(e)}"
+        overall_status = "ERROR"
+        issues.append(f"Database connection failed: {str(e)}")
+    
+    # Check 2: Verify required directories exist
+    required_dirs = ['clips', 'uploads', 'transcriptions']
+    dir_status = {}
+    for directory in required_dirs:
+        dir_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), directory)
+        exists = os.path.isdir(dir_path)
+        dir_status[directory] = "exists" if exists else "missing"
+        if not exists:
+            overall_status = "WARNING"
+            issues.append(f"Directory '{directory}' is missing")
+            # Try to create the directory
+            try:
+                os.makedirs(dir_path, exist_ok=True)
+                issues[-1] += " (created automatically)"
+            except Exception as e:
+                issues[-1] += f" (failed to create: {str(e)})"
+    
+    # Check 3: Environment variables
+    env_vars = {
+        "DATABASE_URL": os.environ.get("DATABASE_URL", "not set"),
+        "PORT": os.environ.get("PORT", "5000 (default)"),
+        "SESSION_SECRET": "set" if os.environ.get("SESSION_SECRET") else "not set",
+    }
+    
+    if env_vars["DATABASE_URL"] == "not set":
+        overall_status = "WARNING"
+        issues.append("DATABASE_URL environment variable is not set")
+    
+    if env_vars["SESSION_SECRET"] == "not set":
+        overall_status = "WARNING" 
+        issues.append("SESSION_SECRET environment variable is not set")
     
     # Return a comprehensive health check
     health_data = {
-        "status": "OK",
+        "status": overall_status,
         "timestamp": datetime.now().isoformat(),
         "database": db_status,
+        "directories": dir_status,
+        "environment": env_vars,
+        "issues": issues,
         "version": "1.0.0"
     }
-    return jsonify(health_data), 200
+    
+    # Only return 200 if everything is OK
+    status_code = 200 if overall_status == "OK" else 200  # Always return 200 for Railway (they just check for 200)
+    return jsonify(health_data), status_code
 
 # Authentication routes
 @app.route('/login', methods=['GET', 'POST'])

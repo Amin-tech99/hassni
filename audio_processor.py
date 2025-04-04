@@ -201,7 +201,8 @@ def process_audio_file(file_path, audio_id, output_folder):
     os.makedirs(output_folder, exist_ok=True)
     
     # Create a subfolder for this audio's clips
-    audio_folder = os.path.join(output_folder, f"audio_{audio_id}")
+    audio_folder_name = f"audio_{audio_id}"
+    audio_folder = os.path.join(output_folder, audio_folder_name)
     os.makedirs(audio_folder, exist_ok=True)
     
     # Convert to WAV format if needed
@@ -211,9 +212,13 @@ def process_audio_file(file_path, audio_id, output_folder):
         if not TORCH_AVAILABLE:
             # If torch is not available, just create a single clip as a copy of the original file
             logger.warning("Torch not available, creating single clip from entire file")
-            clip_path = os.path.join(audio_folder, "clip_1.wav")
-            shutil.copy(wav_file_path, clip_path)
-            return [clip_path]
+            clip_filename = "clip_1.wav"
+            full_clip_path = os.path.join(audio_folder, clip_filename)
+            shutil.copy(wav_file_path, full_clip_path)
+            
+            # Return relative path for database storage
+            relative_clip_path = os.path.join('clips', audio_folder_name, clip_filename)
+            return [relative_clip_path]
         
         # Load the Silero VAD model
         vad_model, get_speech_timestamps, save_audio, read_audio = get_silero_vad_model()
@@ -230,9 +235,13 @@ def process_audio_file(file_path, audio_id, output_folder):
         clip_paths = []
         
         for i, ts in enumerate(timestamps):
-            clip_path = os.path.join(audio_folder, f"clip_{i+1}.wav")
-            save_audio(clip_path, audio[ts['start']:ts['end']], sampling_rate=16000)
-            clip_paths.append(clip_path)
+            clip_filename = f"clip_{i+1}.wav"
+            full_clip_path = os.path.join(audio_folder, clip_filename)
+            save_audio(full_clip_path, audio[ts['start']:ts['end']], sampling_rate=16000)
+            
+            # Store relative path in the database
+            relative_clip_path = os.path.join('clips', audio_folder_name, clip_filename)
+            clip_paths.append(relative_clip_path)
         
         logger.info(f"Audio processing complete. {len(clip_paths)} clips saved.")
         
@@ -249,9 +258,13 @@ def process_audio_file(file_path, audio_id, output_folder):
         logger.error(f"Error processing audio: {str(e)}")
         # As a fallback on error, create a dummy clip (in production this should handle differently)
         try:
-            clip_path = os.path.join(audio_folder, "clip_error_fallback.wav")
-            shutil.copy(wav_file_path, clip_path)
-            logger.warning(f"Created fallback clip due to processing error: {clip_path}")
+            clip_filename = "clip_error_fallback.wav"
+            full_clip_path = os.path.join(audio_folder, clip_filename)
+            shutil.copy(wav_file_path, full_clip_path)
+            logger.warning(f"Created fallback clip due to processing error: {full_clip_path}")
+            
+            # Return relative path for database storage
+            relative_clip_path = os.path.join('clips', audio_folder_name, clip_filename)
             
             # Clean up temporary WAV file if it was created
             if wav_file_path != file_path and os.path.exists(wav_file_path):
@@ -260,7 +273,7 @@ def process_audio_file(file_path, audio_id, output_folder):
                 except Exception as clean_error:
                     logger.warning(f"Failed to clean up temporary WAV file: {str(clean_error)}")
                     
-            return [clip_path]
+            return [relative_clip_path]
         except Exception as copy_error:
             logger.error(f"Error creating fallback clip: {str(copy_error)}")
             raise e

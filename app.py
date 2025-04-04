@@ -610,6 +610,38 @@ def save_transcription():
     return jsonify({'error': 'Form validation failed', 'errors': errors}), 400
 
 # Root route
+@app.route('/clips/<int:clip_id>')
+@login_required
+def serve_clip(clip_id):
+    """Serve an audio clip file"""
+    clip = Clip.query.get_or_404(clip_id)
+    
+    # Security check: Only allow access if the user is an admin or the assigned transcriber
+    if not (current_user.role == 'admin' or current_user.id == clip.transcriber_id):
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    # Handle both absolute and relative paths
+    # Try the original path first
+    clip_path = clip.path
+    
+    # If the path is absolute but file doesn't exist, try to find it relative to project root
+    if os.path.isabs(clip_path) and not os.path.exists(clip_path):
+        # Extract the part after the last directory containing 'clips'
+        parts = clip_path.split('clips')
+        if len(parts) > 1:
+            relative_path = os.path.join('clips', parts[-1].lstrip('/'))
+            if os.path.exists(relative_path):
+                clip_path = relative_path
+                logger.info(f"Using relative path instead: {clip_path}")
+    
+    # Check if file exists
+    if not os.path.exists(clip_path):
+        logger.error(f"Clip file not found: Original path: {clip.path}, Tried: {clip_path}")
+        return jsonify({'error': 'File not found'}), 404
+    
+    # Serve the file from its location on disk
+    return send_file(clip_path, mimetype='audio/wav')
+
 @app.route('/')
 def index():
     if current_user.is_authenticated:

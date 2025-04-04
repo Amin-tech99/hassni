@@ -1,61 +1,30 @@
 {% extends "base.html" %}
 
-{% block title %}Transcribe Audio - Hassaniya Arabic Transcription Platform{% endblock %}
+{% block title %}Transcribe Audio{% endblock %}
 
 {% block content %}
 <div class="row">
-    <div class="col-12 mb-3">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('transcriber_dashboard') }}">Dashboard</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Transcribe: {{ audio.filename }}</li>
-            </ol>
-        </nav>
-    </div>
-</div>
-
-<div class="row">
     <!-- Clip list sidebar -->
-    <div class="col-md-4 col-lg-3 mb-4">
-        <div class="card h-100">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Clips</h5>
-            </div>
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">Clips</div>
             <div class="card-body p-0">
                 <div class="list-group list-group-flush clip-list">
                     {% for clip in clips %}
                         <div class="clip-item" 
                              data-clip-id="{{ clip.id }}"
-                             data-clip-url="{{ url_for('static', filename=clip.path.replace(request.script_root + '/static/', '')) }}"
+                             data-clip-url="{{ url_for("serve_clip", clip_id=clip.id) }}"
                              data-clip-status="{{ clip.status }}">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <strong>Clip {{ clip.order }}</strong>
                                     <small class="d-block text-muted">{{ clip.filename }}</small>
                                 </div>
-                                <span class="badge 
-                                    {% if clip.status == 'assigned' %}
-                                        bg-primary
-                                    {% elif clip.status == 'submitted' %}
-                                        bg-success
-                                    {% elif clip.status == 'completed' %}
-                                        bg-success
-                                    {% endif %} status-badge">
-                                    {% if clip.status == 'assigned' %}
-                                        In Progress
-                                    {% elif clip.status == 'submitted' %}
-                                        Submitted
-                                    {% elif clip.status == 'completed' %}
-                                        Approved
-                                    {% endif %}
+                                <span class="badge bg-primary">
+                                    {{ clip.status }}
                                 </span>
                             </div>
                         </div>
-                        
-                        <!-- Hidden field to store existing transcription -->
-                        {% if clip.id in transcriptions %}
-                            <input type="hidden" id="transcription-text-{{ clip.id }}" value="{{ transcriptions[clip.id].text }}">
-                        {% endif %}
                     {% endfor %}
                 </div>
             </div>
@@ -63,66 +32,26 @@
     </div>
     
     <!-- Transcription area -->
-    <div class="col-md-8 col-lg-9">
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Transcribe Audio</h5>
-            </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">Transcribe Audio</div>
             <div class="card-body">
                 <!-- Audio player -->
-                <div class="audio-player-container">
-                    <audio id="audio-player" controls class="audio-player"></audio>
-                    <div class="speed-controls mt-2">
-                        <button type="button" class="btn btn-outline-primary speed-btn" data-speed="0.5">0.5x</button>
-                        <button type="button" class="btn btn-primary speed-btn" data-speed="1.0">1.0x</button>
-                        <button type="button" class="btn btn-outline-primary speed-btn" data-speed="1.5">1.5x</button>
-                    </div>
-                </div>
+                <audio id="audio-player" controls class="audio-player"></audio>
                 
                 <!-- Transcription form -->
-                <form id="transcription-form" method="POST" action="{{ url_for('save_transcription') }}">
+                <form id="transcription-form" method="POST" action="{{ url_for("save_transcription") }}">
                     {{ form.hidden_tag() }}
                     {{ form.clip_id(id="clip_id") }}
                     {{ form.submit_type(id="submit_type") }}
                     
                     <div class="mb-3">
-                        <label for="text" class="form-label">Transcription (Hassaniya Arabic):</label>
-                        {{ form.text(class="form-control transcription-area", id="text", placeholder="Type the transcription here...") }}
+                        <label for="text" class="form-label">Transcription:</label>
+                        {{ form.text(class="form-control", id="text", rows=5) }}
                     </div>
                     
-                    <div class="d-flex justify-content-between">
-                        <div class="keyboard-shortcuts mb-2">
-                            <small class="text-muted">
-                                <strong>Keyboard shortcuts:</strong>
-                                Space = Play/Pause, 
-                                1 = 0.5x speed, 
-                                2 = 1.0x speed, 
-                                3 = 1.5x speed
-                            </small>
-                        </div>
-                        
-                        <div>
-                            <button type="button" class="btn btn-outline-primary save-btn me-2">
-                                <i class="fas fa-save me-1"></i> Save Draft
-                            </button>
-                            <button type="button" class="btn btn-success submit-btn">
-                                <i class="fas fa-check-circle me-1"></i> Submit
-                            </button>
-                        </div>
-                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
                 </form>
-                
-                <div class="alert alert-info mt-3">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>Transcription Guidelines:</strong>
-                    <ul class="mb-0 mt-2">
-                        <li>Transcribe exactly what you hear in the Hassaniya Arabic dialect</li>
-                        <li>Include all words, even filler words and repetitions</li>
-                        <li>Don't add punctuation unless clearly indicated by pauses in speech</li>
-                        <li>Use standard Arabic script, but maintain the Hassaniya pronunciation</li>
-                        <li>Save your work frequently to avoid losing progress</li>
-                    </ul>
-                </div>
             </div>
         </div>
     </div>
@@ -130,5 +59,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/transcription.js') }}"></script>
+<script src="{{ url_for("static", filename="js/transcription.js") }}"></script>
 {% endblock %}

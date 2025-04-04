@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("Admin page initialized");
+    
     // File upload preview
     const fileInput = document.getElementById('audio_file');
     const fileLabel = document.querySelector('.custom-file-label');
@@ -260,12 +262,25 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Audio player in review page
     const reviewAudioPlayers = document.querySelectorAll('.review-audio-player');
+    console.log(`Found ${reviewAudioPlayers.length} review audio players`);
+    
     reviewAudioPlayers.forEach(player => {
+        // Add event listeners for audio player events
+        player.addEventListener('error', (e) => {
+            console.error("Audio player error:", e);
+        });
+        
+        player.addEventListener('loadeddata', () => {
+            console.log("Review audio loaded successfully");
+        });
+        
         const speedButtons = player.parentElement.querySelectorAll('.speed-btn');
+        console.log(`Found ${speedButtons.length} speed buttons for player`);
         
         speedButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const speed = parseFloat(button.getAttribute('data-speed'));
+                console.log(`Setting playback speed to ${speed}`);
                 player.playbackRate = speed;
                 
                 // Update active button within this container
@@ -280,5 +295,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
+    });
+    
+    // Check all audio source URLs
+    const allAudioPlayers = document.querySelectorAll('audio');
+    console.log(`Found ${allAudioPlayers.length} total audio players on the page`);
+    
+    allAudioPlayers.forEach((player, index) => {
+        console.log(`Audio player ${index+1} source: ${player.src}`);
     });
 });

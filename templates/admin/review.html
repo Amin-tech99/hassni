@@ -71,7 +71,7 @@
                                 <div class="card-body">
                                     <!-- Audio player -->
                                     <div class="audio-player-container">
-                                        <audio src="{{ url_for('static', filename=cd.clip.path.replace(request.script_root + '/static/', '')) }}" 
+                                        <audio src="{{ url_for('serve_clip', clip_id=cd.clip.id) }}" 
                                                controls 
                                                class="review-audio-player w-100"></audio>
                                         <div class="speed-controls">

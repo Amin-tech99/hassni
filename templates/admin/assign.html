@@ -184,8 +184,9 @@
                                                             {% endif %}
                                                         </td>
                                                         <td>
-                                                            <audio src="{{ url_for('static', filename=clip.path.replace(request.script_root + '/static/', '')) }}" 
+                                                            <audio src="{{ url_for('serve_clip', clip_id=clip.id) }}" 
                                                                 controls 
+                                                                class="preview-audio-player"
                                                                 style="width: 120px; height: 30px;"></audio>
                                                         </td>
                                                     </tr>

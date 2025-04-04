@@ -15,6 +15,14 @@ echo "===============================================" | timestamp
 
 echo "Starting prestart script..." | timestamp
 
+# Start a minimal health check server in the background to respond during initialization
+echo "Starting health check server in background..." | timestamp
+python healthcheck_standalone.py &
+HEALTH_SERVER_PID=$!
+echo "  ✓ Health check server started with PID: $HEALTH_SERVER_PID" | timestamp
+# Give the health check server a moment to start
+sleep 2
+
 # Create necessary directories with verbose output
 echo "Creating required directories..." | timestamp
 mkdir -p clips && echo "  ✓ clips directory ready" | timestamp

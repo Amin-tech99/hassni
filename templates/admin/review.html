@@ -23,7 +23,7 @@
                 <div>
                     <a href="{{ url_for('export_dataset', audio_id=audio.id) }}" class="btn btn-success">
                         <i class="fas fa-file-export me-1"></i> Export Dataset
-                    </a>
+                    </a><a href="{{ url_for('export_zip_dataset', audio_id=audio.id) }}" class="btn btn-success ms-2"><i class="fas fa-download me-1"></i> Download ZIP Dataset</a>
                 </div>
             </div>
             

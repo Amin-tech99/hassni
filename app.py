@@ -1,5 +1,6 @@
 import os
 import logging
+import tempfile
 from datetime import datetime
 from functools import wraps
 from flask import Flask, render_template, redirect, url_for, flash, request, jsonify, send_file
@@ -699,3 +700,95 @@ def index():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
+@app.route('/admin/export_zip/<int:audio_id>')
+@login_required
+def export_zip_dataset(audio_id):
+    if current_user.role != 'admin':
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('transcriber_dashboard'))
+        
+    audio = Audio.query.get_or_404(audio_id)
+    
+    # Create a temporary zip file
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
+    temp_file.close()
+    
+    # Create a zip file
+    with zipfile.ZipFile(temp_file.name, 'w') as zipf:
+        clips = Clip.query.filter_by(audio_id=audio_id).all()
+        
+        # Create a metadata JSON file
+        dataset = []
+        for clip in clips:
+            transcription = Transcription.query.filter_by(clip_id=clip.id, status='approved').first()
+            if transcription:
+                # Get relative path for audio file
+                audio_path = clip.path
+                # Create a filename for the destination in the zip
+                zip_audio_path = f"audio/{os.path.basename(audio_path)}"
+                
+                # Add audio file to zip
+                zipf.write(audio_path, zip_audio_path)
+                
+                # Add entry to dataset
+                dataset.append({
+                    'audio_filepath': zip_audio_path,
+                    'text': transcription.text
+                })
+        
+        # Add dataset.json
+        if dataset:
+            zipf.writestr('dataset.json', json.dumps(dataset, indent=2))
+    
+    # Send the zip file
+    return send_file(temp_file.name, 
+                     mimetype='application/zip',
+                     as_attachment=True, 
+                     download_name=f'dataset_{audio.filename}_{datetime.now().strftime("%Y%m%d")}.zip')
+
+@app.route('/admin/export_all_zip')
+@login_required
+def export_all_zip_dataset():
+    if current_user.role != 'admin':
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('transcriber_dashboard'))
+    
+    # Create a temporary zip file
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
+    temp_file.close()
+    
+    # Create a zip file
+    with zipfile.ZipFile(temp_file.name, 'w') as zipf:
+        # Get all approved transcriptions across all audio files
+        dataset = []
+        transcriptions = Transcription.query.filter_by(status='approved').all()
+        
+        for transcription in transcriptions:
+            clip = Clip.query.get(transcription.clip_id)
+            if clip:
+                # Get relative path for audio file
+                audio_path = clip.path
+                # Create a filename for the destination in the zip
+                audio_name = os.path.basename(audio_path)
+                audio_id = clip.audio_id
+                zip_audio_path = f"audio/{audio_id}/{audio_name}"
+                
+                # Add audio file to zip
+                zipf.write(audio_path, zip_audio_path)
+                
+                # Add entry to dataset
+                dataset.append({
+                    'audio_filepath': zip_audio_path,
+                    'text': transcription.text
+                })
+        
+        # Add dataset.json
+        if dataset:
+            zipf.writestr('dataset.json', json.dumps(dataset, indent=2))
+    
+    # Send the zip file
+    return send_file(temp_file.name, 
+                     mimetype='application/zip',
+                     as_attachment=True, 
+                     download_name=f'complete_dataset_{datetime.now().strftime("%Y%m%d")}.zip')

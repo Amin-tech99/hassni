@@ -50,7 +50,7 @@ os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 db.init_app(app)
 
 @app.route('/health')
-defth health_check():
+def health_check():
     # Always return healthy status for deployment health checks
     # This ensures the container doesn't get restarted during initialization
     health_data = {

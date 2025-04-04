@@ -1,31 +1,22 @@
-FROM python:3.11-slim
+FROM python:3.10
 
 WORKDIR /app
 
-# Install system dependencies including ffmpeg
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
     ffmpeg \
-    build-essential \
-    && apt-get clean \
+    libsndfile1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy application code
 COPY . .
 
-# Create necessary directories
-RUN mkdir -p clips uploads transcriptions
+# Upgrade pip to the latest version
+RUN python -m pip install --upgrade pip
+RUN pip install gunicorn==21.2.0
 
-# Set environment variables
+RUN python -m venv /opt/venv && . /opt/venv/bin/activate && pip install --no-cache-dir -r requirements.txt
+
 ENV PORT=5000
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+EXPOSE 5000
 
-# Make the prestart script executable
-RUN chmod +x prestart.sh
-
-# Command to run
-CMD ./prestart.sh && python -m gunicorn main:app --timeout 120 --bind 0.0.0.0:$PORT
+# Use shell form to allow environment variable expansion
+CMD gunicorn main:app --bind 0.0.0.0:${PORT} --timeout 120 --workers 2

@@ -51,7 +51,35 @@ db.init_app(app)
 
 @app.route('/health')
 def health_check():
-    return 'OK', 200
+    # Check database connection
+    try:
+        # Simple query to check database connection
+        db.session.execute('SELECT 1')
+        db_status = 'connected'
+    except Exception as e:
+        logger.error(f"Health check - Database error: {str(e)}")
+        db_status = 'error'
+    
+    # Check if required directories exist
+    dirs_status = {
+        'clips': os.path.isdir(app.config["UPLOAD_FOLDER"]),
+        'uploads': os.path.isdir('uploads'),
+        'transcriptions': os.path.isdir('transcriptions')
+    }
+    
+    # Prepare health response
+    health_data = {
+        'status': 'healthy',
+        'timestamp': datetime.now().isoformat(),
+        'database': db_status,
+        'directories': dirs_status,
+        'environment': os.environ.get('RAILWAY_ENVIRONMENT', 'development')
+    }
+    
+    # Log health check for debugging
+    logger.info(f"Health check called: {health_data}")
+    
+    return jsonify(health_data), 200
 
 login_manager = LoginManager()
 login_manager.init_app(app)

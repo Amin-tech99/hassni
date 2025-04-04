@@ -64,9 +64,9 @@ RUN python -c "import subprocess; subprocess.run(['ffmpeg', '-version'], check=T
     echo "Verifying FFmpeg libraries needed by torchaudio:" && \
     find /usr/lib -name "libavdevice.so*" -o -name "libavformat.so*" -o -name "libavcodec.so*" -o -name "libswresample.so*" -o -name "libswscale.so*" -o -name "libavutil.so*"
 
-# Create a test script to verify torchaudio can access FFmpeg
-RUN echo 'import os\nimport sys\nimport torch\nimport torchaudio\n\nprint("PyTorch version:", torch.__version__)\nprint("Torchaudio version:", torchaudio.__version__)\nprint("Python version:", sys.version)\nprint("\\nEnvironment variables:")\nprint(f"LD_LIBRARY_PATH: {os.environ.get(\'LD_LIBRARY_PATH\', \'Not set\')}")\n\nprint("\\nChecking for FFmpeg libraries:")\nos.system("ldconfig -p | grep libavdevice")\nos.system("ldconfig -p | grep libavformat")\nos.system("ldconfig -p | grep libavcodec")\n\nprint("\\nChecking torchaudio FFmpeg availability...")\ntry:\n    torchaudio.utils.ffmpeg_utils.get_video_metadata("nonexistent.mp4")\n    print("FFmpeg libraries found by torchaudio")\nexcept FileNotFoundError:\n    print("File not found error - expected for nonexistent file")\nexcept ImportError as e:\n    print("ImportError:", str(e))\n    print("\\nDetailed library information:")\n    os.system("find /usr -name \"libavdevice*\" -o -name \"libavformat*\" -o -name \"libavcodec*\"")\n    exit(1)\nexcept Exception as e:\n    print("Other error:", str(e))\n    if "FFmpeg" in str(e):\n        print("\\nDetailed library information:")\n        os.system("find /usr -name \"libavdevice*\" -o -name \"libavformat*\" -o -name \"libavcodec*\"")\n        exit(1)' > /tmp/test_torchaudio.py && \
-    python /tmp/test_torchaudio.py || echo "WARNING: torchaudio FFmpeg test failed but continuing build"
+# Copy and run test script to verify torchaudio can access FFmpeg
+COPY test_torchaudio.py /tmp/test_torchaudio.py
+RUN python /tmp/test_torchaudio.py || echo "WARNING: torchaudio FFmpeg test failed but continuing build"
 
 # Create necessary directories
 RUN mkdir -p clips uploads transcriptions instance

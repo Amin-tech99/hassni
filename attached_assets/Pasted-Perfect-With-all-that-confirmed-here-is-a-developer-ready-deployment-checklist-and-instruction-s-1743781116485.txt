@@ -1,0 +1,115 @@
+Perfect! With all that confirmed, here is a **developer-ready deployment checklist and instruction set** to ensure **your Flask-based Hassaniya Arabic transcription app deploys smoothly to Railway** with no build, runtime, or post-deployment issues.
+
+---
+
+## ✅ Deployment Guide for Flask Hassaniya Transcription App to Railway
+
+### 📁 File/Folder Structure (exactly like this):
+```
+/your-project-root
+│
+├── app.py                    # Main Flask app
+├── requirements.txt          # All Python dependencies
+├── Procfile                  # Instructs Railway how to run the app
+├── config.py                 # Optional: app config
+├── /templates                # HTML templates (login, dashboard, etc.)
+├── /static                   # Static files like CSS, JS
+├── /clips                    # Audio clips (organized by audio ID)
+├── /uploads                  # Original uploaded audio files
+├── /transcriptions           # Saved transcriptions (JSON or DB)
+├── /data                     # Optional folder for exports or backups
+├── .gitignore                # Ignore clips, DBs, etc. in Git
+└── railway.json              # (optional but recommended)
+```
+
+---
+
+### 📄 Key Files You Must Include
+
+#### 1. `app.py`  
+Your Flask app, initialized like this:
+```python
+from flask import Flask
+app = Flask(__name__)
+# rest of your code...
+```
+
+#### 2. `requirements.txt`
+```txt
+Flask==2.3.2
+Flask-Login==0.6.2
+gunicorn==21.2.0
+torch==2.0.0
+torchaudio==2.0.0
+silero-vad @ git+https://github.com/snakers4/silero-vad
+```
+
+#### 3. `Procfile`  
+No extension. Just one line:
+```
+web: gunicorn app:app
+```
+
+#### 4. `railway.json` *(optional but good for override settings)*  
+```json
+{
+  "deploy": {
+    "startCommand": "gunicorn app:app"
+  }
+}
+```
+
+#### 5. `.gitignore`
+```gitignore
+__pycache__/
+*.pyc
+*.db
+.env
+clips/
+uploads/
+transcriptions/
+venv/
+```
+
+---
+
+### 🛠 Deployment Steps on Railway
+
+1. Push your project to a **public or private GitHub repo**.
+2. Go to [Railway.app](https://railway.app).
+3. Click **"New Project" → "Deploy from GitHub"**.
+4. Select your repo.
+5. Railway will automatically detect Python, install from `requirements.txt`, and use your `Procfile`.
+6. Once deployed, click **“Open App”** to test.
+
+---
+
+### ✅ Must-Have Code Inside `app.py`
+
+Make sure this is near the bottom:
+```python
+if __name__ == '__main__':
+    app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+```
+
+And import `os` at the top:
+```python
+import os
+```
+
+---
+
+### 🧪 After Deployment Checklist
+
+- [ ] Login page loads and works
+- [ ] Admin dashboard shows upload form
+- [ ] Uploaded audio is split with silero-vad
+- [ ] Clips stored in `/clips/audio_id/`
+- [ ] Transcribers can see assigned clips
+- [ ] Admins can review & export transcriptions
+- [ ] JSONL/ZIP export functions properly
+- [ ] No module or import errors in Railway logs
+
+---
+
+If you want, I can also generate a **starter template for GitHub** with all these files already scaffolded. Want that too?

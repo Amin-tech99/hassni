@@ -24,10 +24,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Use a more reliable approach to install FFmpeg libraries
-# Instead of specifying exact versions that might not be available,
-# we install the packages without version suffixes and let apt resolve dependencies
+# Install specific FFmpeg library versions needed by torchaudio 2.0.0
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    libavdevice58 \
+    libavfilter7 \
+    libavformat58 \
+    libavcodec58 \
+    libswresample3 \
+    libswscale5 \
+    libavutil56 \
     libavdevice-dev \
     libavfilter-dev \
     libavformat-dev \
@@ -39,12 +44,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && ldconfig  # Refresh the dynamic linker cache
 
-# Create symbolic links to ensure libraries are found in expected locations
-# Using wildcard to find the actual library versions installed by apt
-RUN for lib in libavdevice libavformat libavcodec libavutil libswresample libswscale; do \
-      find /usr/lib/x86_64-linux-gnu -name "${lib}.so.*" -type f -exec basename {} \; | sort -V | tail -n 1 | \
-      xargs -I{} ln -sf /usr/lib/x86_64-linux-gnu/{} /usr/lib/{}; \
-    done
+# Create explicit symbolic links for the specific library versions needed by torchaudio 2.0.0
+RUN ln -sf /usr/lib/x86_64-linux-gnu/libavdevice.so.58 /usr/lib/libavdevice.so.58 && \
+    ln -sf /usr/lib/x86_64-linux-gnu/libavformat.so.58 /usr/lib/libavformat.so.58 && \
+    ln -sf /usr/lib/x86_64-linux-gnu/libavcodec.so.58 /usr/lib/libavcodec.so.58 && \
+    ln -sf /usr/lib/x86_64-linux-gnu/libavutil.so.56 /usr/lib/libavutil.so.56 && \
+    ln -sf /usr/lib/x86_64-linux-gnu/libswresample.so.3 /usr/lib/libswresample.so.3 && \
+    ln -sf /usr/lib/x86_64-linux-gnu/libswscale.so.5 /usr/lib/libswscale.so.5
 
 # Copy requirements first for better caching
 COPY requirements.txt .
@@ -72,11 +78,11 @@ RUN python /tmp/test_torchaudio.py || echo "WARNING: torchaudio FFmpeg test fail
 RUN mkdir -p clips uploads transcriptions instance
 
 # Set environment variables
-ENV PORT=5000
+ENV PORT=8080
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/usr/lib/x86_64-linux-gnu:/lib
-EXPOSE 5000
+ENV LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/usr/lib/x86_64-linux-gnu:/lib:/usr/lib/x86_64-linux-gnu
+EXPOSE 8080
 
 # Make the prestart script executable
 RUN chmod +x prestart.sh

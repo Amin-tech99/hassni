@@ -9,6 +9,9 @@ RUN apt-get update && apt-get install -y \
 
 COPY . .
 
+# Upgrade pip to the latest version
+RUN python -m pip install --upgrade pip
+
 RUN python -m venv /opt/venv && . /opt/venv/bin/activate && pip install --no-cache-dir -r requirements.txt
 
 ENV PORT=5000

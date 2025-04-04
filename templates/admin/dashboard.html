@@ -14,9 +14,9 @@
                     {{ form.hidden_tag() }}
                     
                     <div class="mb-3">
-                        <label for="audio_file" class="form-label">Select Audio File (.wav)</label>
+                        <label for="audio_file" class="form-label">Select Audio File</label>
                         <div class="input-group">
-                            {{ form.audio_file(class="form-control", id="audio_file", accept=".wav") }}
+                            {{ form.audio_file(class="form-control", id="audio_file", accept=".wav,.mp3,.aac,.ogg,.m4a,.flac") }}
                             {{ form.submit(class="btn btn-primary") }}
                         </div>
                         {% if form.audio_file.errors %}
@@ -27,7 +27,8 @@
                             </div>
                         {% endif %}
                         <div class="form-text">
-                            Maximum file size: 500MB. The file will be processed to remove silence and split into clips.
+                            Supported formats: WAV, MP3, AAC, OGG, M4A, FLAC. Maximum file size: 500MB. 
+                            The file will be processed to remove silence and split into clips.
                         </div>
                     </div>
                 </form>
@@ -112,7 +113,7 @@
                     </div>
                 {% else %}
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i> No audio files uploaded yet. Upload a WAV file to begin.
+                        <i class="fas fa-info-circle me-2"></i> No audio files uploaded yet. Upload an audio file to begin.
                     </div>
                 {% endif %}
             </div>
